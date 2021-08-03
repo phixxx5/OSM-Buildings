@@ -1,5 +1,3 @@
-
-
 __author__ = "Johannes Hechtl"
 __email__ = "johannes.hechtl@tum.de"
 __version__ = "1.0"
@@ -8,17 +6,21 @@ import FreeCAD, FreeCADGui
 from pivy import coin
 import Part, PartGui
 
+
 class BuildingObject:
     """This is the class for a custom FreeCadScripted object. This object represents a building."""
 
     def __init__(self, obj, building):
         '''Add some custom properties to our box feature'''
-        
-        obj.addProperty('App::PropertyString', 'address', 'BuildingObject', "The adress of the building.").address=building.address
-        obj.addProperty('App::PropertyInteger', 'levels', 'BuildingObject', "Number of Levels of the building.").levels=building.levels
+
+        obj.addProperty('App::PropertyString', 'address', 'BuildingObject',
+                        "The adress of the building.").address = building.address
+        obj.addProperty('App::PropertyInteger', 'levels', 'BuildingObject',
+                        "Number of Levels of the building.").levels = building.levels
 
         height_vector = FreeCAD.Vector(0, 0, building.height)
-        obj.addProperty('App::PropertyVector', 'height', 'BuildingObject', "Height of the building").height=height_vector
+        obj.addProperty('App::PropertyVector', 'height', 'BuildingObject',
+                        "Height of the building").height = height_vector
 
         point_vectors_bottom = []
 
@@ -26,211 +28,183 @@ class BuildingObject:
             vector = FreeCAD.Vector(point["x"], point["y"], 0)
             point_vectors_bottom.append(vector)
 
-        obj.addProperty('App::PropertyVectorList', 'corners_bottom', 'BuildingObject', "List of the coordinates of the buildings' bottom corners").corners_bottom=point_vectors_bottom
+        obj.addProperty('App::PropertyVectorList', 'corners_bottom', 'BuildingObject',
+                        "List of the coordinates of the buildings' bottom corners").corners_bottom = point_vectors_bottom
 
         point_vectors_top = []
         for top_corner in point_vectors_bottom:
             top_corner = top_corner.add(height_vector)
             point_vectors_top.append(top_corner)
 
-        obj.addProperty('App::PropertyVectorList', 'corners_top', 'BuildingObject', "List of the coordinates of the buildings' top corners").corners_top=point_vectors_top
+        obj.addProperty('App::PropertyVectorList', 'corners_top', 'BuildingObject',
+                        "List of the coordinates of the buildings' top corners").corners_top = point_vectors_top
 
-
-        obj.addProperty("Part::PropertyPartShape","Shape","BuildingObject", "Shape of the building")
+        obj.addProperty("Part::PropertyPartShape", "Shape", "BuildingObject", "Shape of the building")
 
         obj.Proxy = self
-   
+
     def onChanged(self, fp, prop):
         '''Do something when a property has changed'''
         pass
 
-
-        
-
-
- 
     def execute(self, fp):
         '''Do something when doing a recomputation, this method is mandatory'''
         if len(fp.corners_bottom) < 3:
             FreeCAD.Console.PrintMessage("Not enough corners" + "\n")
             return
 
-
         bottom_face = Part.makePolygon(fp.corners_bottom)
 
-        
-
-        top_face = Part.makePolygon(fp.corners_top)    # the corners have to be a closed loop, this is already the case in the osm data
+        top_face = Part.makePolygon(
+            fp.corners_top)  # the corners have to be a closed loop, this is already the case in the osm data
 
         faces = []
         faces.append(Part.Face(bottom_face))
-        
-
 
         """ Now the side faces of the building have to be created. For each face you need four points: the two points on the bottom line (called b1 and b2)
         and the two points on the top line (called t1 and t2)"""
-        for i in range(len(fp.corners_bottom)-1):
+        for i in range(len(fp.corners_bottom) - 1):
             b1 = fp.corners_bottom[i]
-            b2 = fp.corners_bottom[i+1]
+            b2 = fp.corners_bottom[i + 1]
 
             t1 = fp.corners_top[i]
-            t2 = fp.corners_top[i+1]
+            t2 = fp.corners_top[i + 1]
 
-            face = Part.makePolygon([b1, b2, t2, t1, b1])   # the points have to be a closed loop, therefore b1 again at the end
+            face = Part.makePolygon(
+                [b1, b2, t2, t1, b1])  # the points have to be a closed loop, therefore b1 again at the end
             faces.append(Part.Face(face))
 
         faces.append(Part.Face(top_face))
         string = str(faces)
-        #FreeCAD.Console.PrintMessage(string + "\n")
+        # FreeCAD.Console.PrintMessage(string + "\n")
 
-
-        doc=FreeCAD.activeDocument() 
+        doc = FreeCAD.activeDocument()
         """for face in faces:
             doc.addObject("Part::Feature","plane").Shape=face"""
 
-        shell = Part.makeShell(faces)   # Combining the surfaces to one Shell
+        shell = Part.makeShell(faces)  # Combining the surfaces to one Shell
 
-        #doc.addObject("Part::Feature","plane").Shape=shell
+        # doc.addObject("Part::Feature","plane").Shape=shell
 
-        #string = str(shell)
-        #FreeCAD.Console.PrintMessage(string + "\n")
+        # string = str(shell)
+        # FreeCAD.Console.PrintMessage(string + "\n")
 
-        solid = Part.makeSolid(shell)   # Making a solid out of the shell
+        solid = Part.makeSolid(shell)  # Making a solid out of the shell
 
         fp.Shape = solid
-        #doc.addObject("Part::Feature","plane").Shape=solid
-
-        
-
-
-
+        # doc.addObject("Part::Feature","plane").Shape=solid
 
 
 class ViewProviderBuilding:
     """Thie VIewProvider was programmed, even though it is not necessary. While is is required by FreeCAD to provide a ViewProvider,
     it is not required to implement the graphic representation with coin."""
+
     def __init__(self, obj):
-        '''Set this object to the proxy object of the actual view provider'''
-        obj.addProperty("App::PropertyColor","Color","Box","Color of the box").Color=(1.0,0.0,0.0)
+        """Set this object to the proxy object of the actual view provider"""
+        obj.addProperty("App::PropertyColor", "Color", "Box", "Color of the box").Color = (1.0, 0.0, 0.0)
         obj.Proxy = self
- 
+
     def attach(self, obj):
-        '''Setup the scene sub-graph of the view provider, this method is mandatory'''
+        """Setup the scene sub-graph of the view provider, this method is mandatory"""
         self.shaded = coin.SoGroup()
         self.wireframe = coin.SoGroup()
         self.color = coin.SoBaseColor()
-       
-        self.data=coin.SoCoordinate3()
-        self.face=coin.SoIndexedFaceSet()
+
+        self.data = coin.SoCoordinate3()
+        self.face = coin.SoIndexedFaceSet()
 
         self.shaded.addChild(self.color)
         self.shaded.addChild(self.data)
         self.shaded.addChild(self.face)
-        obj.addDisplayMode(self.shaded,"Shaded");
-        style=coin.SoDrawStyle()
+        obj.addDisplayMode(self.shaded, "Shaded")
+        style = coin.SoDrawStyle()
         style.style = coin.SoDrawStyle.LINES
         self.wireframe.addChild(style)
         self.wireframe.addChild(self.color)
         self.wireframe.addChild(self.data)
         self.wireframe.addChild(self.face)
-        obj.addDisplayMode(self.wireframe,"Wireframe");
-        self.onChanged(obj,"Color")
+        obj.addDisplayMode(self.wireframe, "Wireframe")
+        self.onChanged(obj, "Color")
 
- 
     def updateData(self, fp, prop):
-        '''If a property of the handled feature has changed we have the chance to handle this here'''
+        """If a property of the handled feature has changed we have the chance to handle this here"""
         # fp is the handled feature, prop is the name of the property that has changed
 
         # see documentation: https://coin3d.github.io/Coin/html/classSoIndexedFaceSet.html
 
-
         if prop == "Shape":
             shape = fp.getPropertyByName("Shape")
-            
+
             num_points = len(fp.corners_bottom)
-            self.data.point.setNum(num_points*2)
+            self.data.point.setNum(num_points * 2)
 
-
-            cnt=0
+            cnt = 0
             for i in fp.corners_bottom:
-                self.data.point.set1Value(cnt,i[0],i[1],i[2])
-                cnt=cnt+1
+                self.data.point.set1Value(cnt, i[0], i[1], i[2])
+                cnt = cnt + 1
 
-            #adding top points
+            # adding top points
             for i in fp.corners_top:
-                self.data.point.set1Value(cnt,i[0],i[1],i[2])
-                cnt=cnt+1
-
-
-            
-
-            
+                self.data.point.set1Value(cnt, i[0], i[1], i[2])
+                cnt = cnt + 1
 
             # adding bottom plane
             cnt = 0
             for i in range(num_points):
-                self.face.coordIndex.set1Value(cnt,i)
-                cnt = cnt+1
+                self.face.coordIndex.set1Value(cnt, i)
+                cnt = cnt + 1
 
-            self.face.coordIndex.set1Value(cnt,-1)
-            cnt=cnt+1
+            self.face.coordIndex.set1Value(cnt, -1)
+            cnt = cnt + 1
 
+            # adding side planes
+            for i in range(num_points - 1):
+                self.face.coordIndex.set1Value(cnt, i + 1)
+                cnt = cnt + 1
+                self.face.coordIndex.set1Value(cnt, i)
+                cnt = cnt + 1
+                self.face.coordIndex.set1Value(cnt, i + num_points)
+                cnt = cnt + 1
+                self.face.coordIndex.set1Value(cnt, i + 1 + num_points)
+                cnt = cnt + 1
+                self.face.coordIndex.set1Value(cnt, -1)
+                cnt = cnt + 1
 
-            #adding side planes
-            for i in range(num_points-1):
-                self.face.coordIndex.set1Value(cnt,i+1)
-                cnt=cnt+1
-                self.face.coordIndex.set1Value(cnt,i)
-                cnt=cnt+1
-                self.face.coordIndex.set1Value(cnt,i+num_points)
-                cnt=cnt+1
-                self.face.coordIndex.set1Value(cnt,i+1+num_points)
-                cnt=cnt+1
-                self.face.coordIndex.set1Value(cnt,-1)
-                cnt=cnt+1
-
-            
-            #adding top plane
+            # adding top plane
             for i in range(num_points):
-                self.face.coordIndex.set1Value(cnt,2*num_points-1-i)    # going counterclockwise, so that the right side of the surface shows
-                cnt = cnt+1
+                self.face.coordIndex.set1Value(cnt,
+                                               2 * num_points - 1 - i)  # going counterclockwise, so that the right side of the surface shows
+                cnt = cnt + 1
 
-            self.face.coordIndex.set1Value(cnt,-1)
-            cnt=cnt+1
+            self.face.coordIndex.set1Value(cnt, -1)
+            cnt = cnt + 1
 
-            
-
-
-
-
-
- 
-    def getDisplayModes(self,obj):
-        '''Return a list of display modes.'''
-        modes=[]
+    def getDisplayModes(self, obj):
+        """Return a list of display modes."""
+        modes = []
         modes.append("Shaded")
         modes.append("Wireframe")
         return modes
- 
+
     def getDefaultDisplayMode(self):
-        '''Return the name of the default display mode. It must be defined in getDisplayModes.'''
+        """Return the name of the default display mode. It must be defined in getDisplayModes."""
         return "Shaded"
- 
-    def setDisplayMode(self,mode):
-        '''Map the display mode defined in attach with those defined in getDisplayModes.\
-                Since they have the same names nothing needs to be done. This method is optional'''
+
+    def setDisplayMode(self, mode):
+        """Map the display mode defined in attach with those defined in getDisplayModes.\
+                Since they have the same names nothing needs to be done. This method is optional"""
         return mode
- 
+
     def onChanged(self, vp, prop):
         '''Here we can do something when a single property got changed'''
         FreeCAD.Console.PrintMessage("Change property: " + str(prop) + "\n")
         if prop == "Color":
             c = vp.getPropertyByName("Color")
-            self.color.rgb.setValue(c[0],c[1],c[2])
- 
+            self.color.rgb.setValue(c[0], c[1], c[2])
+
     def getIcon(self):
-        '''Return the icon in XPM format which will appear in the tree view. This method is\
-                optional and if not defined a default icon is shown.'''
+        """Return the icon in XPM format which will appear in the tree view. This method is\
+                optional and if not defined a default icon is shown."""
         return """
             /* XPM */
             static const char * ViewProviderBox_xpm[] = {
@@ -258,55 +232,56 @@ class ViewProviderBuilding:
             "  ##$$$$$#      ",
             "   #######      "};
             """
- 
+
     def __getstate__(self):
-        '''When saving the document this object gets stored using Python's json module.\
+        """When saving the document this object gets stored using Python's json module.\
                 Since we have some un-serializable parts here -- the Coin stuff -- we must define this method\
-                to return a tuple of all serializable objects or None.'''
+                to return a tuple of all serializable objects or None."""
         return None
- 
-    def __setstate__(self,state):
+
+    def __setstate__(self, state):
         '''When restoring the serialized object from document we have the chance to set some internals here.\
                 Since no data were serialized nothing needs to be done here.'''
         return None
 
+
 class ViewProviderBox:
-	def __init__(self, obj):
-		''' Set this object to the proxy object of the actual view provider '''
-		obj.Proxy = self
+    def __init__(self, obj):
+        """ Set this object to the proxy object of the actual view provider """
+        obj.Proxy = self
 
-	def attach(self, obj):
-		''' Setup the scene sub-graph of the view provider, this method is mandatory '''
-		return
+    def attach(self, obj):
+        """ Setup the scene sub-graph of the view provider, this method is mandatory """
+        return
 
-	def updateData(self, fp, prop):
-		''' If a property of the handled feature has changed we have the chance to handle this here '''
-		return
+    def updateData(self, fp, prop):
+        """ If a property of the handled feature has changed we have the chance to handle this here """
+        return
 
-	def getDisplayModes(self,obj):
-		''' Return a list of display modes. '''
-		modes=[]
-		return modes
+    def getDisplayModes(self, obj):
+        """ Return a list of display modes. """
+        modes = []
+        return modes
 
-	def getDefaultDisplayMode(self):
-		''' Return the name of the default display mode. It must be defined in getDisplayModes. '''
-		return "Shaded"
+    def getDefaultDisplayMode(self):
+        """ Return the name of the default display mode. It must be defined in getDisplayModes. """
+        return "Shaded"
 
-	def setDisplayMode(self,mode):
-		''' Map the display mode defined in attach with those defined in getDisplayModes.
-		Since they have the same names nothing needs to be done. This method is optional.
-		'''
-		return mode
+    def setDisplayMode(self, mode):
+        """ Map the display mode defined in attach with those defined in getDisplayModes.
+        Since they have the same names nothing needs to be done. This method is optional.
+        """
+        return mode
 
-	def onChanged(self, vp, prop):
-		''' Print the name of the property that has changed '''
-		FreeCAD.Console.PrintMessage("Change property: " + str(prop) + "\n")
+    def onChanged(self, vp, prop):
+        """ Print the name of the property that has changed """
+        FreeCAD.Console.PrintMessage("Change property: " + str(prop) + "\n")
 
-	def getIcon(self):
-		''' Return the icon in XMP format which will appear in the tree view. This method is optional
-		and if not defined a default icon is shown.
-		'''
-		return """
+    def getIcon(self):
+        """ Return the icon in XMP format which will appear in the tree view. This method is optional
+        and if not defined a default icon is shown.
+        """
+        return """
 			/* XPM */
 			static const char * ViewProviderBox_xpm[] = {
 			"16 16 6 1",
@@ -334,50 +309,47 @@ class ViewProviderBox:
 			"   #######      "};
 			"""
 
-	def __getstate__(self):
-		''' When saving the document this object gets stored using Python's cPickle module.
-		Since we have some un-pickable here -- the Coin stuff -- we must define this method
-		to return a tuple of all pickable objects or None.
-		'''
-		return None
+    def __getstate__(self):
+        """ When saving the document this object gets stored using Python's cPickle module.
+        Since we have some un-pickable here -- the Coin stuff -- we must define this method
+        to return a tuple of all pickable objects or None.
+        """
+        return None
 
-	def __setstate__(self,state):
-		''' When restoring the pickled object from document we have the chance to set some
-		internals here. Since no data were pickled nothing needs to be done here.
-		'''
-		return None
+    def __setstate__(self, state):
+        """ When restoring the pickled object from document we have the chance to set some
+        internals here. Since no data were pickled nothing needs to be done here.
+        """
+        return None
 
 
 class PartFeature:
-	def __init__(self, obj):
-		obj.Proxy = self
+    def __init__(self, obj):
+        obj.Proxy = self
+
 
 class Box(PartFeature):
-	def __init__(self, obj):
-		PartFeature.__init__(self, obj)
-		''' Add some custom properties to our box feature '''
-		obj.addProperty("App::PropertyLength","Length","Box","Length of the box").Length=1.0
-		obj.addProperty("App::PropertyLength","Width","Box","Width of the box").Width=1.0
-		obj.addProperty("App::PropertyLength","Height","Box", "Height of the box").Height=1.0
+    def __init__(self, obj):
+        PartFeature.__init__(self, obj)
+        ''' Add some custom properties to our box feature '''
+        obj.addProperty("App::PropertyLength", "Length", "Box", "Length of the box").Length = 1.0
+        obj.addProperty("App::PropertyLength", "Width", "Box", "Width of the box").Width = 1.0
+        obj.addProperty("App::PropertyLength", "Height", "Box", "Height of the box").Height = 1.0
 
-	def onChanged(self, fp, prop):
-		''' Print the name of the property that has changed '''
-		FreeCAD.Console.PrintMessage("Change property: " + str(prop) + "\n")
+    def onChanged(self, fp, prop):
+        ''' Print the name of the property that has changed '''
+        FreeCAD.Console.PrintMessage("Change property: " + str(prop) + "\n")
 
-	def execute(self, fp):
-		''' Print a short message when doing a recomputation, this method is mandatory '''
-		FreeCAD.Console.PrintMessage("Recompute Python Box feature\n")
-		fp.Shape = Part.makeBox(fp.Length,fp.Width,fp.Height)
+    def execute(self, fp):
+        """ Print a short message when doing a recomputation, this method is mandatory """
+        FreeCAD.Console.PrintMessage("Recompute Python Box feature\n")
+        fp.Shape = Part.makeBox(fp.Length, fp.Width, fp.Height)
 
 
 def makeBuilding(building):
     doc = FreeCAD.ActiveDocument
-    a=FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Building")
+    a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Building")
     BuildingObject(a, building)
-    #ViewProviderBuilding(a.ViewObject)
+    # ViewProviderBuilding(a.ViewObject)
     ViewProviderBox(a.ViewObject)
     doc.recompute()
-
-
-
-
