@@ -47,8 +47,10 @@ class OSM_Buildings(Workbench):
         import place_facade
         import place_image
 
-        self.list = ['OSMtoCAD', 'PlaceFacade',
-                     'PlaceImage']  # A list of the command names created
+        self.list = ['OSMtoCAD',
+                     'PlaceFacade',
+                     # 'PlaceImage'
+                     ]  # A list of the command names created
         # commands, that are not listed here, will not show up in the GUI
 
         self.appendToolbar("My Commands", self.list)  # creates a new toolbar with your commands

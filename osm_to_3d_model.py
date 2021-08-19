@@ -2,12 +2,10 @@ __author__ = "Johannes Hechtl"
 __email__ = "johannes.hechtl@tum.de"
 __version__ = "1.0"
 
-
-
 from BuildingObject import makeBuilding
 import os
 import FreeCAD, FreeCADGui
-import Part, PartGui 
+import Part, PartGui
 from PySide import QtGui
 import xml.etree.ElementTree as ET
 from Map import Map
@@ -21,25 +19,24 @@ class OSMtoCAD():
         resource_path = FreeCAD.getHomePath() + "Mod/OSM-Buildings/resources/"
         if not os.path.exists(resource_path):
             resource_path = FreeCAD.getUserAppDataDir() + "Mod/OSM-Buildings/resources/"
-        return {'Pixmap'  : resource_path + "map.svg", # the name of a svg file available in the resources
-                'Accel' : "Shift+S", # a default shortcut (optional)
+        return {'Pixmap': resource_path + "map.svg",  # the name of a svg file available in the resources
+                'Accel': "Shift+S",  # a default shortcut (optional)
                 'MenuText': "OSM to CAD",
-                'ToolTip' : "Load .osm file"}
+                'ToolTip': "Load .osm file"}
 
     def Activated(self):
-        
-        doc=FreeCAD.activeDocument() 
-        
+
+        doc = FreeCAD.activeDocument()
+
         filename = QtGui.QFileDialog().getOpenFileName()[0]
 
         map = Map(filename)
 
-        doc=FreeCAD.activeDocument() 
-        
+        doc = FreeCAD.activeDocument()
+
         # add buildings to FreeCad Document
         for building in map.buildings:
             makeBuilding(building)
-
 
         doc.recompute()
         return
@@ -48,5 +45,6 @@ class OSMtoCAD():
         """Here you can define if the command must be active or not (greyed) if certain conditions
         are met or not. This function is optional."""
         return True
+
 
 FreeCADGui.addCommand('OSMtoCAD', OSMtoCAD())
