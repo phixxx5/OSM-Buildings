@@ -10,7 +10,10 @@ except ModuleNotFoundError:
     from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QPushButton
     from PyQt5.QtGui import QPixmap
 import my_qt_label
+from collections import namedtuple
 
+Point = namedtuple('Point', 'x y')
+FacadeObject = namedtuple('FacadeObject', 'p1 p2 type')
 WINDOW = 0
 BALCONY = 1
 
@@ -60,7 +63,7 @@ class FacadeGui(QWidget):
             self.redo_call()
 
     def add_rectangle(self, point1, point2):
-        self.facade_objects.append((point1, point2, self.mode))
+        self.facade_objects.append(FacadeObject(point1, point2, self.mode))
 
     def window_call(self):
         print('Window')

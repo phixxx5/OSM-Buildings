@@ -117,15 +117,15 @@ class PlaceFacade:
 
         cv.namedWindow('window')
 
+        # mark points
+        FreeCAD.Console.PrintMessage("Mark facade corners and two depth lines. To continue press N" + "\n")
         cv.setMouseCallback('window', self.draw_circle)
         cv.imshow("window", img)
 
-        # go to next step
         wait_n_key()
         cv.setMouseCallback('window', self.empty_method)
 
         img = self.fassade.src_img.copy()
-
         if len(self.fassade.corners) != 8:
             sys.exit("Corner size has to be 8")
 
@@ -153,7 +153,6 @@ class PlaceFacade:
         cv.imwrite(self.img_path, transformed_img)
 
         cv.imshow("window", img)
-
         wait_n_key()
 
         van_point_hor = line_line_intersection(top_left, top_right, bot_right, bot_left)
