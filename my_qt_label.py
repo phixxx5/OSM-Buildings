@@ -19,17 +19,25 @@ class MyQtLabel(QLabel):
         self.owner = owner
         self.cur_click = None
         self.cur_release = None
+        self.draw_mode = False
 
     def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
         if ev.button() == 1:
             print('Press', ev.x(), ev.y(), ev.button())
-            self.cur_click = (ev.x(), ev.y())
+            self.cur_click = facade_gui.Point(ev.x(), ev.y())
+            self.draw_mode = True
 
     def mouseReleaseEvent(self, ev: QtGui.QMouseEvent) -> None:
-        if ev.button() == 1 and ev.x() != self.cur_click[0] and ev.y() != self.cur_click[1]:
+        if ev.button() == 1 and ev.x() != self.cur_click[0] and ev.y() != self.cur_click.y:
             print('Release', ev.x(), ev.y(), ev.button())
-            self.cur_release = (ev.x(), ev.y())
+            self.cur_release = facade_gui.Point(ev.x(), ev.y())
+            self.draw_mode = False
             self.owner.add_rectangle(self.cur_click, self.cur_release)
+            self.update()
+
+    def mouseMoveEvent(self, ev: QtGui.QMouseEvent) -> None:
+        if self.draw_mode:
+            self.tmp_rect = (self.cur_click.x, self.cur_click.y, ev.x(), ev.y())
             self.update()
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
@@ -37,14 +45,23 @@ class MyQtLabel(QLabel):
         qp = QPainter()
         qp.begin(self)
         for fac_object in self.owner.facade_objects:
-            if fac_object[2] == facade_gui.WINDOW:
-                qp.setPen(QPen(QColor(10, 10, 255), 3))
-            if fac_object[2] == facade_gui.BALCONY:
+            if fac_object.type == facade_gui.WINDOW:
+                qp.setPen(QPen(QColor(0, 205, 255), 3))
+            if fac_object.type == facade_gui.BALCONY:
                 qp.setPen(QPen(QColor(200, 200, 0), 3))
-
-            width = abs(fac_object[0][0] - fac_object[1][0])
-            height = abs(fac_object[0][1] - fac_object[1][1])
-            x = min(fac_object[0][0], fac_object[1][0])
-            y = min(fac_object[0][1], fac_object[1][1])
-            qp.drawRect(x, y, width, height)
+            qp.drawRect(
+                *self.calculate_drawable_rect(fac_object.p1.x, fac_object.p1.y, fac_object.p2.x, fac_object.p2.y))
+            qp.drawText(min(fac_object.p1.x, fac_object.p2.x), max(fac_object.p1.y, fac_object.p2.y) + 15,
+                        'window' if fac_object.type==facade_gui.WINDOW else 'balcony')
+        if self.draw_mode:
+            qp.setPen(QPen(QColor(255, 255, 255), 3))
+            qp.drawRect(
+                *self.calculate_drawable_rect(self.tmp_rect[0], self.tmp_rect[1], self.tmp_rect[2], self.tmp_rect[3]))
         qp.end()
+
+    def calculate_drawable_rect(self, x1, y1, x2, y2):
+        width = abs(x2 - x1)
+        height = abs(y2 - y1)
+        x = min(x1, x2)
+        y = min(y1, y2)
+        return x, y, width, height
