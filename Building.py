@@ -4,7 +4,7 @@ __email__ = "johannes.hechtl@tum.de"
 __version__ = "1.0"
 
 
-HEIGHT_PER_LEVEL = 3    # in meters
+HEIGHT_PER_LEVEL = 3000    # in millimeters
 
 class Building:
     """ This class represents a building. It saves all the data of a single building, extracted from the osm file."""
