@@ -45,7 +45,7 @@ class OSM_Buildings(Workbench):
         import my_test
         import osm_to_3d_model
         import place_facade
-        import place_image
+        import place_in_cad
 
         self.list = ['OSMtoCAD',
                      'PlaceFacade',

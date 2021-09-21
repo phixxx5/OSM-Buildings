@@ -28,6 +28,7 @@ class FacadeGui(QWidget):
         self.mode = WINDOW
 
         main_layout = QGridLayout()
+        self.setFixedSize(1200, 800)
 
         self.window_button = QPushButton('Window')
         self.window_button.clicked.connect(self.window_call)
@@ -42,10 +43,10 @@ class FacadeGui(QWidget):
         finish_button = QPushButton('Finish')
         finish_button.clicked.connect(self.finish_call)
 
-        q_image = QtGui.QImage(img_path).scaled(1200, 800,
-                                                aspectRatioMode=QtCore.Qt.KeepAspectRatio)
+        q_image = QtGui.QImage(img_path)  # .scaled(1200, 800,aspectRatioMode=QtCore.Qt.KeepAspectRatio)
         self.image_label = my_qt_label.MyQtLabel(self)
         self.image_label.setPixmap(QPixmap.fromImage(q_image))
+        self.image_label.setScaledContents(True)
 
         main_layout.addWidget(self.window_button, 0, 0)
         main_layout.addWidget(self.balcony_button, 0, 1)
@@ -56,10 +57,11 @@ class FacadeGui(QWidget):
         self.show()
 
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
-        print(a0.key())
         if a0.key() == 85:
+            print('Undo')
             self.undo_call()
         if a0.key() == 82:
+            print('Redo')
             self.redo_call()
 
     def add_rectangle(self, point1, point2):
@@ -81,7 +83,7 @@ class FacadeGui(QWidget):
         print("Finish")
         print(self.facade_objects)
         self.close()
-        self.owner.insertIntoCAD()
+        self.owner.insertIntoCAD(self.facade_objects)
 
     def undo_call(self):
         if len(self.facade_objects) > 0:

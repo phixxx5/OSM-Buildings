@@ -14,7 +14,7 @@ from collections import namedtuple
 import numpy as np
 
 from facade_gui import FacadeGui
-from place_image import place_image
+from place_in_cad import place_image, place_facade_objects
 
 IMAGE_MAX_WIDTH = 1200
 IMAGE_MAX_HEIGHT = 800
@@ -142,7 +142,7 @@ class PlaceFacade:
         cv.line(img, (depth_l1[0], depth_l1[1]), (depth_l2[0], depth_l2[1]), (0, 255, 0), 3)
         cv.line(img, (depth_r1[0], depth_r1[1]), (depth_r2[0], depth_r2[1]), (0, 255, 0), 3)
 
-        # compute perspective transform
+        # compute perspective transform and save for later
         fac_width = 500
         fac_height = 500
         matrix = cv.getPerspectiveTransform(np.float32([top_left, top_right, bot_right, bot_left]),
@@ -177,7 +177,6 @@ class PlaceFacade:
         top_right = transform_point(top_right)
         bot_left = transform_point(bot_left)
         bot_right = transform_point(bot_right)
-
         depth_l1 = transform_point(depth_l1)
         depth_r1 = transform_point(depth_r1)
         van_point_hor = transform_point(van_point_hor)
@@ -186,10 +185,8 @@ class PlaceFacade:
 
         cv.line(img, top_left, van_point_hor, (50, 50, 255), 3)
         cv.line(img, bot_left, van_point_hor, (50, 50, 255), 3)
-
         cv.line(img, top_left, van_point_ver, (50, 50, 255), 3)
         cv.line(img, top_right, van_point_ver, (50, 50, 255), 3)
-
         cv.line(img, depth_l1, van_point_dep, (50, 50, 255), 3)
         cv.line(img, depth_r1, van_point_dep, (50, 50, 255), 3)
 
@@ -204,15 +201,18 @@ class PlaceFacade:
 
         wait_n_key()
         # compute perpendiculars through vanishing points
+
         perpendicular_h = perpendicular_through_point(van_point_hor, van_point_ver, van_point_dep)
         cv.line(img, van_point_hor, perpendicular_h, (0, 255, 255), 3)
         perpendicular_v = perpendicular_through_point(van_point_ver, van_point_dep, van_point_hor)
         cv.line(img, van_point_ver, perpendicular_v, (0, 255, 255), 3)
         perpendicular_d = perpendicular_through_point(van_point_dep, van_point_hor, van_point_ver)
         cv.line(img, van_point_dep, perpendicular_d, (0, 255, 255), 3)
+
         cv.imshow("window", img)
         wait_n_key()
         # compute circles?
+
         ortho_center = line_line_intersection(van_point_hor, perpendicular_h, van_point_ver, perpendicular_v)
         circle_center = van_point_ver[0] + van_point_hor[0] / 2, van_point_ver[1] + van_point_hor[1] / 2
         # radius = geo.Point(*van_point_hor).distance(geo.Point)
@@ -220,13 +220,15 @@ class PlaceFacade:
 
         # wait_n_key()
         cv.destroyAllWindows()
+
         # let user select facade segments
         FreeCAD.Console.PrintMessage("Creating Gui" + "\n")
         FacadeGui(self, self.img_path)
 
-    def insertIntoCAD(self):
+    def insertIntoCAD(self, fac_objects):
         # place image in 3d model
         place_image(self.doc, self.img_path, self.clicked_face)
+        place_facade_objects(self.doc, fac_objects, self.clicked_face)
         self.doc.recompute()
         return
 

@@ -24,20 +24,20 @@ class MyQtLabel(QLabel):
     def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
         if ev.button() == 1:
             print('Press', ev.x(), ev.y(), ev.button())
-            self.cur_click = facade_gui.Point(ev.x(), ev.y())
+            self.cur_click = facade_gui.Point(ev.x() / self.width(), ev.y() / self.height())
             self.draw_mode = True
 
     def mouseReleaseEvent(self, ev: QtGui.QMouseEvent) -> None:
         if ev.button() == 1 and ev.x() != self.cur_click[0] and ev.y() != self.cur_click.y:
             print('Release', ev.x(), ev.y(), ev.button())
-            self.cur_release = facade_gui.Point(ev.x(), ev.y())
+            self.cur_release = facade_gui.Point(ev.x() / self.width(), ev.y() / self.height())
             self.draw_mode = False
             self.owner.add_rectangle(self.cur_click, self.cur_release)
             self.update()
 
     def mouseMoveEvent(self, ev: QtGui.QMouseEvent) -> None:
         if self.draw_mode:
-            self.tmp_rect = (self.cur_click.x, self.cur_click.y, ev.x(), ev.y())
+            self.tmp_rect = (self.cur_click.x, self.cur_click.y, ev.x() / self.width(), ev.y() / self.height())
             self.update()
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
@@ -51,8 +51,9 @@ class MyQtLabel(QLabel):
                 qp.setPen(QPen(QColor(200, 200, 0), 3))
             qp.drawRect(
                 *self.calculate_drawable_rect(fac_object.p1.x, fac_object.p1.y, fac_object.p2.x, fac_object.p2.y))
-            qp.drawText(min(fac_object.p1.x, fac_object.p2.x), max(fac_object.p1.y, fac_object.p2.y) + 15,
-                        'window' if fac_object.type==facade_gui.WINDOW else 'balcony')
+            qp.drawText(min(fac_object.p1.x, fac_object.p2.x) * self.width(),
+                        max(fac_object.p1.y, fac_object.p2.y) * self.height() + 15,
+                        'window' if fac_object.type == facade_gui.WINDOW else 'balcony')
         if self.draw_mode:
             qp.setPen(QPen(QColor(255, 255, 255), 3))
             qp.drawRect(
@@ -64,4 +65,4 @@ class MyQtLabel(QLabel):
         height = abs(y2 - y1)
         x = min(x1, x2)
         y = min(y1, y2)
-        return x, y, width, height
+        return x * self.width(), y * self.height(), width * self.width(), height * self.height()

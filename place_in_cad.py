@@ -39,6 +39,31 @@ def place_image(doc, image_path, clicked_face):
     img_plane.Placement = FreeCAD.Placement(clicked_face.CenterOfMass, rot_2.multiply(rot_1))
 
 
+def place_facade_objects(doc, fac_objects, clicked_face):
+    points = clicked_face.Vertexes
+    face_normal = clicked_face.normalAt(0, 0)
+    # points are always ordered this way
+    ref_point = points[0].Point
+    horiz_point = points[1].Point
+    verti_point = points[3].Point
+    yaw_angle = math.degrees(FreeCAD.Vector(1, 0, 0).getAngle(face_normal))
+    if face_normal.y < 0:
+        yaw_angle = - yaw_angle
+    else:
+        yaw_angle = + yaw_angle
+    rot_2 = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), yaw_angle)
+    for fac_object in fac_objects:
+        box_object = doc.addObject("Part::Box", "Box")
+        box_object.Width = ref_point.sub(horiz_point).Length * abs(fac_object.p1.x - fac_object.p2.x)
+        box_object.Height = ref_point.sub(verti_point).Length * abs(fac_object.p1.y - fac_object.p2.y)
+        box_object.Length = 100  # mm
+        position = ref_point.add(horiz_point.sub(ref_point).multiply(min(fac_object.p1.x, fac_object.p2.x)
+                                                                     )).add(
+            verti_point.sub(ref_point).multiply(1 - max(fac_object.p1.y, fac_object.p2.y)
+                                                ))
+        box_object.Placement = FreeCAD.Placement(position, rot_2)
+
+
 class PlaceImage:
 
     def Activated(self):
