@@ -25,7 +25,7 @@ class BuildingObject:
         point_vectors_bottom = []
 
         for point in building.points:
-            vector = FreeCAD.Vector(point["x"], point["y"], 0)
+            vector = FreeCAD.Vector(point["x"] * 1000, point["y"] * 1000, 0)
             point_vectors_bottom.append(vector)
 
         obj.addProperty('App::PropertyVectorList', 'corners_bottom', 'BuildingObject',
