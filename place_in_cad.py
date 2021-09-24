@@ -4,11 +4,15 @@ __version__ = "1.0"
 
 import FreeCAD, FreeCADGui
 from PySide import QtGui
-
+from typing import List
 import math
 
+from facade_selection.facade_gui import FacadeObject
+from facade_selection.utils import FacObjTypes
 
-def place_image(doc, image_path, clicked_face):
+
+
+def place_image(doc, image_path: str, clicked_face) -> None:
     # change draw style to flat lines to improve image display
     name = "Flat lines"
     mw = FreeCADGui.getMainWindow()
@@ -39,7 +43,7 @@ def place_image(doc, image_path, clicked_face):
     img_plane.Placement = FreeCAD.Placement(clicked_face.CenterOfMass, rot_2.multiply(rot_1))
 
 
-def place_facade_objects(doc, fac_objects, clicked_face):
+def place_facade_objects(doc, fac_objects: List[FacadeObject], clicked_face) -> None:
     points = clicked_face.Vertexes
     face_normal = clicked_face.normalAt(0, 0)
     # points are always ordered this way
@@ -62,6 +66,12 @@ def place_facade_objects(doc, fac_objects, clicked_face):
             verti_point.sub(ref_point).multiply(1 - max(fac_object.p1.y, fac_object.p2.y)
                                                 ))
         box_object.Placement = FreeCAD.Placement(position, rot_2)
+        if fac_object.type == FacObjTypes.WINDOW:
+            box_object.ViewObject.ShapeColor = (0.67, 1.00, 1.00)
+        if fac_object.type == FacObjTypes.BALCONY:
+            box_object.Length = 1500  # mm
+            box_object.ViewObject.ShapeColor = (1.00, 0.67, 0.00)
+    FreeCAD.ActiveDocument.recompute()  # if nothing appears recompute
 
 
 class PlaceImage:

@@ -1,4 +1,4 @@
-"""This Script is still work in progresss. It is the start of an implementation of a phtogrammetry algorithm."""
+"""This Script is still work in progresss. It is the start of an implementation of a photogrammetry algorithm."""
 
 __author__ = "Philip Zimmermann"
 __email__ = "philip.zimmermann@tum.de"
@@ -13,7 +13,7 @@ import sys
 from collections import namedtuple
 import numpy as np
 
-from facade_gui import FacadeGui
+from facade_selection.facade_gui import FacadeGui
 from place_in_cad import place_image, place_facade_objects
 
 IMAGE_MAX_WIDTH = 1200
@@ -58,7 +58,7 @@ def wait_n_key():
             break
 
 
-class PlaceFacade:
+class FacadeCommand:
     """Command that lets the user select vanishing points in an image and places the facade on selected face in CAD
     model """
 
@@ -143,8 +143,8 @@ class PlaceFacade:
         cv.line(img, (depth_r1[0], depth_r1[1]), (depth_r2[0], depth_r2[1]), (0, 255, 0), 3)
 
         # compute perspective transform and save for later
-        fac_width = 500
-        fac_height = 500
+        fac_width = 800
+        fac_height = 800
         matrix = cv.getPerspectiveTransform(np.float32([top_left, top_right, bot_right, bot_left]),
                                             np.float32([[0, 0], [fac_width - 1, 0], [fac_width - 1, fac_height - 1],
                                                         [0, fac_height - 1]]))
@@ -153,7 +153,7 @@ class PlaceFacade:
         cv.imwrite(self.img_path, transformed_img)
 
         cv.imshow("window", img)
-        wait_n_key()
+        #wait_n_key()
 
         van_point_hor = line_line_intersection(top_left, top_right, bot_right, bot_left)
         van_point_ver = line_line_intersection(top_left, bot_left, top_right, bot_right)
@@ -191,7 +191,7 @@ class PlaceFacade:
         cv.line(img, depth_r1, van_point_dep, (50, 50, 255), 3)
 
         cv.imshow("window", img)
-        wait_n_key()
+        #wait_n_key()
         # connect vanishing points
         cv.line(img, van_point_hor, van_point_ver, (0, 255, 255), 3)
         cv.line(img, van_point_ver, van_point_dep, (0, 255, 255), 3)
@@ -199,7 +199,7 @@ class PlaceFacade:
 
         cv.imshow("window", img)
 
-        wait_n_key()
+        #wait_n_key()
         # compute perpendiculars through vanishing points
 
         perpendicular_h = perpendicular_through_point(van_point_hor, van_point_ver, van_point_dep)
@@ -218,7 +218,6 @@ class PlaceFacade:
         # radius = geo.Point(*van_point_hor).distance(geo.Point)
         # circle = geo.Circle(circle_center, )
 
-        # wait_n_key()
         cv.destroyAllWindows()
 
         # let user select facade segments
@@ -238,8 +237,6 @@ class PlaceFacade:
         return True
 
 
-FreeCADGui.addCommand('PlaceFacade', PlaceFacade())
-
 if __name__ == '__main__':
-    fassade = PlaceFacade()
+    fassade = FacadeCommand()
     fassade.Activated()

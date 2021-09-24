@@ -2,14 +2,12 @@ __author__ = "Johannes Hechtl"
 __email__ = "johannes.hechtl@tum.de"
 __version__ = "1.0"
 
-from BuildingObject import makeBuilding
 import os
-import FreeCAD, FreeCADGui
-import Part, PartGui
 from PySide import QtGui
-import xml.etree.ElementTree as ET
-from Map import Map
-import cv2 as cv
+import FreeCAD, FreeCADGui
+
+from osm_map.BuildingObject import makeBuilding
+from osm_map.Map import Map
 
 
 class OSMtoCAD():
@@ -45,6 +43,3 @@ class OSMtoCAD():
         """Here you can define if the command must be active or not (greyed) if certain conditions
         are met or not. This function is optional."""
         return True
-
-
-FreeCADGui.addCommand('OSMtoCAD', OSMtoCAD())

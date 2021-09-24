@@ -6,6 +6,9 @@ __version__ = "1.0"
 
 import FreeCAD, FreeCADGui
 
+from facade_command import FacadeCommand
+from osm_to_3d_model import OSMtoCAD
+
 
 class ScriptCmd:
     """Example Class for a simple command."""
@@ -25,6 +28,8 @@ class ScriptCmd:
 
 # Registering the command with the GUI. This needs to be done before the Workbench is initialized
 FreeCADGui.addCommand('Script_Cmd', ScriptCmd())
+FreeCADGui.addCommand('OSMtoCAD', OSMtoCAD())
+FreeCADGui.addCommand('PlaceFacade', FacadeCommand())
 
 
 class OSM_Buildings(Workbench):
@@ -41,11 +46,6 @@ class OSM_Buildings(Workbench):
         # import MyModuleA, MyModuleB # import here all the needed files that create your FreeCAD commands
 
         # if you have command classes in other files, they need to be imported EXACTLY here
-
-        import my_test
-        import osm_to_3d_model
-        import place_facade
-        import place_in_cad
 
         self.list = ['OSMtoCAD',
                      'PlaceFacade',
