@@ -10,7 +10,7 @@ except ModuleNotFoundError:
     from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QPushButton, QLabel
     from PyQt5.QtGui import QPainter, QColor, QFont, QPen
 
-import facade_gui
+from facade_selection.utils import Point, FacObjTypes
 
 
 class MyQtLabel(QLabel):
@@ -24,16 +24,16 @@ class MyQtLabel(QLabel):
     def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
         if ev.button() == 1:
             print('Press', ev.x(), ev.y(), ev.button())
-            self.cur_click = facade_gui.Point(ev.x() / self.width(), ev.y() / self.height())
+            self.cur_click = Point(ev.x() / self.width(), ev.y() / self.height())
             self.draw_mode = True
 
     def mouseReleaseEvent(self, ev: QtGui.QMouseEvent) -> None:
         if ev.button() == 1 and ev.x() != self.cur_click[0] and ev.y() != self.cur_click.y:
             print('Release', ev.x(), ev.y(), ev.button())
-            self.cur_release = facade_gui.Point(ev.x() / self.width(), ev.y() / self.height())
+            self.cur_release = Point(ev.x() / self.width(), ev.y() / self.height())
             self.draw_mode = False
-            self.owner.add_rectangle(self.cur_click, self.cur_release)
             self.update()
+            self.owner.add_rectangle(self.cur_click, self.cur_release)
 
     def mouseMoveEvent(self, ev: QtGui.QMouseEvent) -> None:
         if self.draw_mode:
@@ -45,15 +45,15 @@ class MyQtLabel(QLabel):
         qp = QPainter()
         qp.begin(self)
         for fac_object in self.owner.facade_objects:
-            if fac_object.type == facade_gui.WINDOW:
+            if fac_object.type == FacObjTypes.WINDOW:
                 qp.setPen(QPen(QColor(0, 205, 255), 3))
-            if fac_object.type == facade_gui.BALCONY:
+            if fac_object.type == FacObjTypes.BALCONY:
                 qp.setPen(QPen(QColor(200, 200, 0), 3))
             qp.drawRect(
                 *self.calculate_drawable_rect(fac_object.p1.x, fac_object.p1.y, fac_object.p2.x, fac_object.p2.y))
             qp.drawText(min(fac_object.p1.x, fac_object.p2.x) * self.width(),
                         max(fac_object.p1.y, fac_object.p2.y) * self.height() + 15,
-                        'window' if fac_object.type == facade_gui.WINDOW else 'balcony')
+                        'window' if fac_object.type == FacObjTypes.WINDOW else 'balcony')
         if self.draw_mode:
             qp.setPen(QPen(QColor(255, 255, 255), 3))
             qp.drawRect(
