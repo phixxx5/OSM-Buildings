@@ -3,7 +3,7 @@ __email__ = "philip.zimmermann@tum.de"
 __version__ = "1.0"
 
 import FreeCAD, FreeCADGui
-from PySide import QtGui
+#from PySide import QtGui
 from typing import List
 import math
 

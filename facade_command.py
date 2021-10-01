@@ -12,6 +12,7 @@ import cv2 as cv
 import sys
 from collections import namedtuple
 import numpy as np
+from sympy import Point, Circle, intersection, Line, Segment
 
 from facade_selection.facade_gui import FacadeGui
 from place_in_cad import place_image, place_facade_objects
@@ -126,11 +127,11 @@ class FacadeCommand:
         cv.setMouseCallback('window', self.empty_method)
 
         img = self.fassade.src_img.copy()
-        if len(self.fassade.corners) != 8:
-            sys.exit("Corner size has to be 8")
+        if len(self.fassade.corners) != 4:
+            sys.exit("Corner size has to be 4")
 
         # todo determine which point is which (when they are disordered)
-        top_left, top_right, bot_right, bot_left, depth_l1, depth_l2, depth_r1, depth_r2 = self.fassade.corners
+        top_left, top_right, bot_right, bot_left = self.fassade.corners
 
         # draw rectangle along four points
         cv.line(img, (top_left[0], top_left[1]), (top_right[0], top_right[1]), (0, 255, 0), 3)
@@ -138,10 +139,11 @@ class FacadeCommand:
         cv.line(img, (bot_right[0], bot_right[1]), (bot_left[0], bot_left[1]), (0, 255, 0), 3)
         cv.line(img, (bot_left[0], bot_left[1]), (top_left[0], top_left[1]), (0, 255, 0), 3)
 
-        # draw depth lines
+        """ # draw depth lines
         cv.line(img, (depth_l1[0], depth_l1[1]), (depth_l2[0], depth_l2[1]), (0, 255, 0), 3)
         cv.line(img, (depth_r1[0], depth_r1[1]), (depth_r2[0], depth_r2[1]), (0, 255, 0), 3)
 
+        
         # compute perspective transform and save for later
         fac_width = 800
         fac_height = 800
@@ -151,16 +153,17 @@ class FacadeCommand:
         transformed_img = cv.warpPerspective(self.fassade.src_img.copy(), matrix, (fac_width, fac_height))
         self.img_path = "facade_transformed.jpg"
         cv.imwrite(self.img_path, transformed_img)
+        """
 
         cv.imshow("window", img)
-        #wait_n_key()
+        # wait_n_key()
 
         van_point_hor = line_line_intersection(top_left, top_right, bot_right, bot_left)
         van_point_ver = line_line_intersection(top_left, bot_left, top_right, bot_right)
-        van_point_dep = line_line_intersection(depth_l1, depth_l2, depth_r1, depth_r2)
+        # van_point_dep = line_line_intersection(depth_l1, depth_l2, depth_r1, depth_r2)
 
         # expand image
-        scaling_factor = 8
+        scaling_factor = 16
         old_img = img
         img = cv.resize(img, (img.shape[1] // scaling_factor, img.shape[0] // scaling_factor))
         side_border = (old_img.shape[0] - img.shape[0]) // 2
@@ -177,44 +180,70 @@ class FacadeCommand:
         top_right = transform_point(top_right)
         bot_left = transform_point(bot_left)
         bot_right = transform_point(bot_right)
-        depth_l1 = transform_point(depth_l1)
-        depth_r1 = transform_point(depth_r1)
+        # depth_l1 = transform_point(depth_l1)
+        # depth_r1 = transform_point(depth_r1)
         van_point_hor = transform_point(van_point_hor)
         van_point_ver = transform_point(van_point_ver)
-        van_point_dep = transform_point(van_point_dep)
+        # van_point_dep = transform_point(van_point_dep)
 
         cv.line(img, top_left, van_point_hor, (50, 50, 255), 3)
         cv.line(img, bot_left, van_point_hor, (50, 50, 255), 3)
         cv.line(img, top_left, van_point_ver, (50, 50, 255), 3)
         cv.line(img, top_right, van_point_ver, (50, 50, 255), 3)
-        cv.line(img, depth_l1, van_point_dep, (50, 50, 255), 3)
-        cv.line(img, depth_r1, van_point_dep, (50, 50, 255), 3)
+        # cv.line(img, depth_l1, van_point_dep, (50, 50, 255), 3)
+        # cv.line(img, depth_r1, van_point_dep, (50, 50, 255), 3)
 
         cv.imshow("window", img)
-        #wait_n_key()
+        # wait_n_key()
         # connect vanishing points
         cv.line(img, van_point_hor, van_point_ver, (0, 255, 255), 3)
-        cv.line(img, van_point_ver, van_point_dep, (0, 255, 255), 3)
-        cv.line(img, van_point_dep, van_point_hor, (0, 255, 255), 3)
+        # cv.line(img, van_point_ver, van_point_dep, (0, 255, 255), 3)
+        # cv.line(img, van_point_dep, van_point_hor, (0, 255, 255), 3)
 
         cv.imshow("window", img)
 
-        #wait_n_key()
+        """        
         # compute perpendiculars through vanishing points
-
         perpendicular_h = perpendicular_through_point(van_point_hor, van_point_ver, van_point_dep)
         cv.line(img, van_point_hor, perpendicular_h, (0, 255, 255), 3)
         perpendicular_v = perpendicular_through_point(van_point_ver, van_point_dep, van_point_hor)
         cv.line(img, van_point_ver, perpendicular_v, (0, 255, 255), 3)
         perpendicular_d = perpendicular_through_point(van_point_dep, van_point_hor, van_point_ver)
         cv.line(img, van_point_dep, perpendicular_d, (0, 255, 255), 3)
+        """
 
         cv.imshow("window", img)
         wait_n_key()
-        # compute circles?
 
-        ortho_center = line_line_intersection(van_point_hor, perpendicular_h, van_point_ver, perpendicular_v)
-        circle_center = van_point_ver[0] + van_point_hor[0] / 2, van_point_ver[1] + van_point_hor[1] / 2
+        # perpendicular through image center and van point connecting line
+        img_center = img.shape[1] // 2, img.shape[0] // 2
+        print(img_center)
+        perpendicular_point = perpendicular_through_point(img_center, van_point_ver, van_point_hor)
+        van_point_connecting_line = Line(Point(*van_point_ver), Point(*van_point_hor))
+        perpendicular_line = Line(Point(*img_center), Point(*perpendicular_point))
+        circle_center = Point((van_point_ver[0] + van_point_hor[0]) / 2, (van_point_ver[1] + van_point_hor[1]) / 2)
+        radius = Point(*van_point_ver).distance(Point(*van_point_hor)) / 2
+        circle = Circle(circle_center, radius)
+        intersections = intersection(circle, perpendicular_line)
+        # find the correct intersection point
+        if len(intersections) != 2:
+            raise Exception("There should be two intersections with the circle.")
+        if len(intersection(Segment(circle_center, intersections[0]), perpendicular_line)) == 1:
+            circle_intersection = intersections[0]
+        elif len(intersection(Segment(circle_center, intersections[1]), perpendicular_line)) == 1:
+            circle_intersection = intersections[1]
+        else:
+            raise Exception("One of the points should be on other side of the vanishing point line")
+
+        vertical_line = Line(circle_intersection, Point(*van_point_ver))
+        horizontal_line = Line(circle_intersection, Point(*van_point_hor))
+        cv.circle(img, circle_center.coordinates, radius, (50, 255, 50), 3)
+        cv.line(img, circle_intersection.coordinates, van_point_hor, (255, 50, 50), 3)
+        cv.line(img, circle_intersection.coordinates, van_point_ver, (255, 50, 50), 3)
+        cv.line(img, circle_intersection.coordinates, img_center, (255, 50, 50), 3)
+
+        cv.imshow("window", img)
+        wait_n_key()
         # radius = geo.Point(*van_point_hor).distance(geo.Point)
         # circle = geo.Circle(circle_center, )
 
@@ -236,6 +265,8 @@ class FacadeCommand:
         are met or not. This function is optional."""
         return True
 
+
+FreeCADGui.addCommand('FacadeCommand', FacadeCommand())
 
 if __name__ == '__main__':
     fassade = FacadeCommand()

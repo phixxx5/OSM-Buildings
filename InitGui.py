@@ -4,35 +4,8 @@ __author__ = "Johannes Hechtl"
 __email__ = "johannes.hechtl@tum.de"
 __version__ = "1.0"
 
-import FreeCAD, FreeCADGui
-
-from facade_command import FacadeCommand
-from osm_to_3d_model import OSMtoCAD
-
-
-class ScriptCmd:
-    """Example Class for a simple command."""
-    """For every in the GUI selectable command a class has to be written, with at least the two following functions:"""
-
-    def Activated(self):
-        """ This code gets executed when the corresponding button is pressed."""
-
-        FreeCAD.Console.PrintMessage('Hello, World!')
-
-    def GetResources(self):
-        """ Return resources for GUI"""
-        return {'Pixmap': 'path_to_an_icon/myicon.png', 'MenuText': 'Short text', 'ToolTip': 'Hello World button.'}
-        # Pixmap is a png icon that is the face of the button.
-        # The tooltip gets displayed when hovering over the button
-
-
-# Registering the command with the GUI. This needs to be done before the Workbench is initialized
-FreeCADGui.addCommand('Script_Cmd', ScriptCmd())
-FreeCADGui.addCommand('OSMtoCAD', OSMtoCAD())
-FreeCADGui.addCommand('PlaceFacade', FacadeCommand())
-
-
 class OSM_Buildings(Workbench):
+
     MenuText = "OSM-Buildings"
     ToolTip = "A description of my workbench"
     resource_path = FreeCAD.getHomePath() + "Mod/OSM-Buildings/resources/"
@@ -46,9 +19,11 @@ class OSM_Buildings(Workbench):
         # import MyModuleA, MyModuleB # import here all the needed files that create your FreeCAD commands
 
         # if you have command classes in other files, they need to be imported EXACTLY here
+        from facade_command import FacadeCommand
+        from osm_to_3d_model import OSMtoCAD
 
         self.list = ['OSMtoCAD',
-                     'PlaceFacade',
+                     'FacadeCommand',
                      # 'PlaceImage'
                      ]  # A list of the command names created
         # commands, that are not listed here, will not show up in the GUI

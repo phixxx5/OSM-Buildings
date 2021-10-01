@@ -88,7 +88,6 @@ class FacadeGui(QWidget):
         fac_obj_1.set_height(avg_height)
         fac_obj_2.set_width(avg_width)
         fac_obj_2.set_height(avg_height)
-        # TODO if rows == 1 set ypos to average, if cols==1 set xpos to average
         # calculate intermediate spaces size
         x_spaces = (abs(fac_obj_2.p2.x - fac_obj_1.p1.x) - columns * avg_width) / (columns - 1) if columns > 1 else 0
         y_spaces = (abs(fac_obj_2.p2.y - fac_obj_1.p1.y) - rows * avg_height) / (rows - 1) if rows > 1 else 0
@@ -139,5 +138,5 @@ class FacadeGui(QWidget):
 
 if __name__ == '__main__':
     app = QApplication([])
-    FacadeGui(None, "/home/philip/workspace/baurobotik/flatten_facades/dev/Baurobotik/TUM.jpg")
+    FacadeGui(None, "/home/philip/workspace/baurobotik/flatten_facades/dev/Baurobotik/tum_transformed.png")
     app.exec()

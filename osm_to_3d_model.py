@@ -10,7 +10,7 @@ from osm_map.BuildingObject import makeBuilding
 from osm_map.Map import Map
 
 
-class OSMtoCAD():
+class OSMtoCAD:
     """This command loads a .osm file and adds 3d models of all buildings to the currently active workspace"""
 
     def GetResources(self):
@@ -43,3 +43,6 @@ class OSMtoCAD():
         """Here you can define if the command must be active or not (greyed) if certain conditions
         are met or not. This function is optional."""
         return True
+
+
+FreeCADGui.addCommand('OSMtoCAD', OSMtoCAD())
