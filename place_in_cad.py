@@ -3,13 +3,12 @@ __email__ = "philip.zimmermann@tum.de"
 __version__ = "1.0"
 
 import FreeCAD, FreeCADGui
-#from PySide import QtGui
+from PySide import QtGui
 from typing import List
 import math
 
 from facade_selection.facade_gui import FacadeObject
 from facade_selection.utils import FacObjTypes
-
 
 
 def place_image(doc, image_path: str, clicked_face) -> None:
@@ -25,11 +24,8 @@ def place_image(doc, image_path: str, clicked_face) -> None:
     pitch_angle = 90  # TODO this only considers perfectly vertical building facades
     rot_1 = FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), pitch_angle)
     ref_point = points[0].Point
-    for point in points[1:]:
-        if point.Point.z == ref_point.z:
-            horiz_point = point.Point
-        if point.Point.x == ref_point.x and point.Point.y == ref_point.y:
-            verti_point = point.Point
+    horiz_point = points[1].Point
+    verti_point = points[3].Point
     yaw_angle = math.degrees(FreeCAD.Vector(1, 0, 0).getAngle(face_normal))
     if face_normal.y < 0:
         yaw_angle = 90 - yaw_angle

@@ -98,6 +98,7 @@ class FacadeCommand:
         """Do something here"""
         try:
             self.clicked_face = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0]
+            self.clicked_building = FreeCADGui.Selection.getSelection()[0]
         except:
             FreeCAD.Console.PrintMessage("Select facade in 3D model first (left-click)." + "\n")
             return
@@ -139,25 +140,6 @@ class FacadeCommand:
         cv.line(img, (bot_right[0], bot_right[1]), (bot_left[0], bot_left[1]), (0, 255, 0), 3)
         cv.line(img, (bot_left[0], bot_left[1]), (top_left[0], top_left[1]), (0, 255, 0), 3)
 
-        """ # draw depth lines
-        cv.line(img, (depth_l1[0], depth_l1[1]), (depth_l2[0], depth_l2[1]), (0, 255, 0), 3)
-        cv.line(img, (depth_r1[0], depth_r1[1]), (depth_r2[0], depth_r2[1]), (0, 255, 0), 3)
-
-        
-        # compute perspective transform and save for later
-        fac_width = 800
-        fac_height = 800
-        matrix = cv.getPerspectiveTransform(np.float32([top_left, top_right, bot_right, bot_left]),
-                                            np.float32([[0, 0], [fac_width - 1, 0], [fac_width - 1, fac_height - 1],
-                                                        [0, fac_height - 1]]))
-        transformed_img = cv.warpPerspective(self.fassade.src_img.copy(), matrix, (fac_width, fac_height))
-        self.img_path = "facade_transformed.jpg"
-        cv.imwrite(self.img_path, transformed_img)
-        """
-
-        cv.imshow("window", img)
-        # wait_n_key()
-
         van_point_hor = line_line_intersection(top_left, top_right, bot_right, bot_left)
         van_point_ver = line_line_intersection(top_left, bot_left, top_right, bot_right)
         # van_point_dep = line_line_intersection(depth_l1, depth_l2, depth_r1, depth_r2)
@@ -176,78 +158,114 @@ class FacadeCommand:
             scaled = point[0] // scaling_factor, point[1] // scaling_factor
             return scaled[0] + top_border, scaled[1] + side_border
 
-        top_left = transform_point(top_left)
-        top_right = transform_point(top_right)
-        bot_left = transform_point(bot_left)
-        bot_right = transform_point(bot_right)
-        # depth_l1 = transform_point(depth_l1)
-        # depth_r1 = transform_point(depth_r1)
-        van_point_hor = transform_point(van_point_hor)
-        van_point_ver = transform_point(van_point_ver)
-        # van_point_dep = transform_point(van_point_dep)
+        top_left = Point(*transform_point(top_left))
+        top_right = Point(*transform_point(top_right))
+        bot_left = Point(*transform_point(bot_left))
+        bot_right = Point(*transform_point(bot_right))
+        van_point_hor = Point(*transform_point(van_point_hor))
+        van_point_ver = Point(*transform_point(van_point_ver))
 
-        cv.line(img, top_left, van_point_hor, (50, 50, 255), 3)
-        cv.line(img, bot_left, van_point_hor, (50, 50, 255), 3)
-        cv.line(img, top_left, van_point_ver, (50, 50, 255), 3)
-        cv.line(img, top_right, van_point_ver, (50, 50, 255), 3)
-        # cv.line(img, depth_l1, van_point_dep, (50, 50, 255), 3)
-        # cv.line(img, depth_r1, van_point_dep, (50, 50, 255), 3)
+        cv.line(img, top_left.coordinates, van_point_hor.coordinates, (50, 50, 255))
+        cv.line(img, bot_left.coordinates, van_point_hor.coordinates, (50, 50, 255))
+        cv.line(img, top_left.coordinates, van_point_ver.coordinates, (50, 50, 255))
+        cv.line(img, top_right.coordinates, van_point_ver.coordinates, (50, 50, 255))
 
-        cv.imshow("window", img)
-        # wait_n_key()
         # connect vanishing points
-        cv.line(img, van_point_hor, van_point_ver, (0, 255, 255), 3)
-        # cv.line(img, van_point_ver, van_point_dep, (0, 255, 255), 3)
-        # cv.line(img, van_point_dep, van_point_hor, (0, 255, 255), 3)
-
-        cv.imshow("window", img)
-
-        """        
-        # compute perpendiculars through vanishing points
-        perpendicular_h = perpendicular_through_point(van_point_hor, van_point_ver, van_point_dep)
-        cv.line(img, van_point_hor, perpendicular_h, (0, 255, 255), 3)
-        perpendicular_v = perpendicular_through_point(van_point_ver, van_point_dep, van_point_hor)
-        cv.line(img, van_point_ver, perpendicular_v, (0, 255, 255), 3)
-        perpendicular_d = perpendicular_through_point(van_point_dep, van_point_hor, van_point_ver)
-        cv.line(img, van_point_dep, perpendicular_d, (0, 255, 255), 3)
-        """
+        van_point_connecting_line = Line(van_point_hor, van_point_ver)
+        cv.line(img, van_point_hor.coordinates, van_point_ver.coordinates, (0, 255, 255))
 
         cv.imshow("window", img)
         wait_n_key()
 
-        # perpendicular through image center and van point connecting line
-        img_center = img.shape[1] // 2, img.shape[0] // 2
-        print(img_center)
-        perpendicular_point = perpendicular_through_point(img_center, van_point_ver, van_point_hor)
-        van_point_connecting_line = Line(Point(*van_point_ver), Point(*van_point_hor))
-        perpendicular_line = Line(Point(*img_center), Point(*perpendicular_point))
-        circle_center = Point((van_point_ver[0] + van_point_hor[0]) / 2, (van_point_ver[1] + van_point_hor[1]) / 2)
-        radius = Point(*van_point_ver).distance(Point(*van_point_hor)) / 2
+        # perpendicular through image center and vanishing point connecting line
+        img_center = Point(img.shape[1] // 2, img.shape[0] // 2)
+        perpendicular_point = Point(*perpendicular_through_point(img_center.coordinates, van_point_ver.coordinates,
+                                                                 van_point_hor.coordinates))
+        perpendicular_line = Line(img_center, perpendicular_point)
+        circle_center = Segment(van_point_ver, van_point_hor).midpoint
+        radius = van_point_ver.distance(van_point_hor) / 2
         circle = Circle(circle_center, radius)
         intersections = intersection(circle, perpendicular_line)
         # find the correct intersection point
         if len(intersections) != 2:
             raise Exception("There should be two intersections with the circle.")
-        if len(intersection(Segment(circle_center, intersections[0]), perpendicular_line)) == 1:
+        if len(intersection(Segment(img_center, intersections[0]), van_point_connecting_line)) == 1:
             circle_intersection = intersections[0]
-        elif len(intersection(Segment(circle_center, intersections[1]), perpendicular_line)) == 1:
+        elif len(intersection(Segment(img_center, intersections[1]), van_point_connecting_line)) == 1:
             circle_intersection = intersections[1]
         else:
             raise Exception("One of the points should be on other side of the vanishing point line")
 
-        vertical_line = Line(circle_intersection, Point(*van_point_ver))
-        horizontal_line = Line(circle_intersection, Point(*van_point_hor))
-        cv.circle(img, circle_center.coordinates, radius, (50, 255, 50), 3)
-        cv.line(img, circle_intersection.coordinates, van_point_hor, (255, 50, 50), 3)
-        cv.line(img, circle_intersection.coordinates, van_point_ver, (255, 50, 50), 3)
-        cv.line(img, circle_intersection.coordinates, img_center, (255, 50, 50), 3)
+        cv.circle(img, circle_center.coordinates, radius, (50, 255, 50))
+        cv.line(img, circle_intersection.coordinates, van_point_hor.coordinates, (255, 255, 255))
+        cv.line(img, circle_intersection.coordinates, van_point_ver.coordinates, (255, 255, 255))
+        cv.line(img, circle_intersection.coordinates, img_center.coordinates, (255, 50, 50))
 
         cv.imshow("window", img)
         wait_n_key()
-        # radius = geo.Point(*van_point_hor).distance(geo.Point)
-        # circle = geo.Circle(circle_center, )
+
+        # compute mirror line
+        mirror_slope = van_point_ver - van_point_hor
+        bottom_center = Segment(bot_right, bot_left).midpoint
+        mirror_line_origin = bottom_center + (bottom_center - van_point_hor)
+        mirror_line = Line(mirror_line_origin, mirror_line_origin + mirror_slope)
+        cv.line(img, (mirror_line_origin - 10 * mirror_slope).coordinates,
+                (mirror_line_origin + 10 * mirror_slope).coordinates,
+                (255, 150, 150), 3)
+
+        # compute mirror line meeting points
+        top_mirror_point = intersection(Line(top_left, top_right), mirror_line)[0]
+        bot_mirror_point = intersection(Line(bot_left, bot_right), mirror_line)[0]
+        right_mirror_point = intersection(Line(top_right, bot_right), mirror_line)[0]
+        left_mirror_point = intersection(Line(top_left, bot_left), mirror_line)[0]
+
+        # compute projected points
+        vertical_projection_slope = Line(circle_intersection, van_point_ver).direction
+        horizontal_projection_slope = Line(circle_intersection, van_point_hor).direction
+
+        top_projection_line = Line(top_mirror_point, top_mirror_point + horizontal_projection_slope)
+        bot_projection_line = Line(bot_mirror_point, bot_mirror_point + horizontal_projection_slope)
+        right_projection_line = Line(right_mirror_point, right_mirror_point + vertical_projection_slope)
+        left_projection_line = Line(left_mirror_point, left_mirror_point + vertical_projection_slope)
+
+        top_left_projected = intersection(top_projection_line, left_projection_line)[0]
+        top_right_projected = intersection(top_projection_line, right_projection_line)[0]
+        bot_left_projected = intersection(bot_projection_line, left_projection_line)[0]
+        bot_right_projected = intersection(bot_projection_line, right_projection_line)[0]
+
+        # draw projection computation
+        cv.line(img, top_right.coordinates, top_mirror_point.coordinates, (50, 50, 255))
+        cv.line(img, bot_right.coordinates, bot_mirror_point.coordinates, (50, 50, 255))
+        cv.line(img, bot_right.coordinates, right_mirror_point.coordinates, (50, 50, 255))
+        cv.line(img, bot_left.coordinates, left_mirror_point.coordinates, (50, 50, 255))
+
+        cv.line(img, top_mirror_point.coordinates, top_left_projected.coordinates, (50, 255, 50))
+        cv.line(img, bot_mirror_point.coordinates, bot_left_projected.coordinates, (50, 255, 50))
+        cv.line(img, right_mirror_point.coordinates, top_right_projected.coordinates, (50, 255, 50))
+        cv.line(img, left_mirror_point.coordinates, top_left_projected.coordinates, (50, 255, 50))
+
+        width = top_left_projected.distance(top_right_projected)
+        height = top_left_projected.distance(bot_left_projected)
+        facade_ratio = height / width
+
+        cv.imshow("window", img)
+        wait_n_key()
 
         cv.destroyAllWindows()
+
+        # compute perspective transform and save for later
+        fac_width = 800
+        fac_height = int(facade_ratio * fac_width)
+        matrix = cv.getPerspectiveTransform(np.float32(self.fassade.corners),
+                                            np.float32([[0, 0], [fac_width - 1, 0], [fac_width - 1, fac_height - 1],
+                                                        [0, fac_height - 1]]))
+        transformed_img = cv.warpPerspective(self.fassade.src_img.copy(), matrix, (fac_width, fac_height))
+        self.img_path = "facade_transformed.jpg"
+        cv.imwrite(self.img_path, transformed_img)
+
+        # adjust building size in CAD model
+        self.adjust_building_height(facade_ratio)
+        self.clicked_face = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0]
 
         # let user select facade segments
         FreeCAD.Console.PrintMessage("Creating Gui" + "\n")
@@ -258,12 +276,22 @@ class FacadeCommand:
         place_image(self.doc, self.img_path, self.clicked_face)
         place_facade_objects(self.doc, fac_objects, self.clicked_face)
         self.doc.recompute()
-        return
 
     def IsActive(self):
         """Here you can define if the command must be active or not (greyed) if certain conditions
         are met or not. This function is optional."""
         return True
+
+    def adjust_building_height(self, facade_ratio):
+        width = self.clicked_face.Vertexes[0].Point.sub(self.clicked_face.Vertexes[1].Point).Length
+        height = width * facade_ratio
+        height_vector = FreeCAD.Vector(0, 0, height)
+        point_vectors_top = []
+        for top_corner in self.clicked_building.corners_bottom:
+            top_corner = top_corner.add(height_vector)
+            point_vectors_top.append(top_corner)
+        self.clicked_building.corners_top = point_vectors_top
+        self.doc.recompute()
 
 
 FreeCADGui.addCommand('FacadeCommand', FacadeCommand())

@@ -19,4 +19,9 @@ It further is meant tp provide functionality to change the fassade of said build
 - add License
 - add "ground" so that buildings don't levitate and it is clear where up and down is
 - add the recompute function for building object
-- add icons
+- calculate module segments
+- continue Eesha's stuff
+- adjust building height through ratio ✔
+- fix bug with one image of small building ✔
+- separate height computation and facade selection to two FreeCAD commands
+- fix image size in facade gui 

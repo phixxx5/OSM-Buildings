@@ -95,6 +95,7 @@ class BuildingObject:
         # doc.addObject("Part::Feature","plane").Shape=solid
 
 
+'''
 class ViewProviderBuilding:
     """Thie VIewProvider was programmed, even though it is not necessary. While is is required by FreeCAD to provide a ViewProvider,
     it is not required to implement the graphic representation with coin."""
@@ -196,7 +197,7 @@ class ViewProviderBuilding:
         return mode
 
     def onChanged(self, vp, prop):
-        '''Here we can do something when a single property got changed'''
+        """Here we can do something when a single property got changed"""
         FreeCAD.Console.PrintMessage("Change property: " + str(prop) + "\n")
         if prop == "Color":
             c = vp.getPropertyByName("Color")
@@ -240,9 +241,10 @@ class ViewProviderBuilding:
         return None
 
     def __setstate__(self, state):
-        '''When restoring the serialized object from document we have the chance to set some internals here.\
-                Since no data were serialized nothing needs to be done here.'''
+        """When restoring the serialized object from document we have the chance to set some internals here.\
+                Since no data were serialized nothing needs to be done here."""
         return None
+'''
 
 
 class ViewProviderBox:

@@ -8,10 +8,12 @@ from facade_selection.utils import FacObjTypes, Point
 
 try:
     from PySide import QtGui, QtCore
-    from PySide.QtGui import QWidget, QApplication, QGridLayout, QPushButton, QPixmap, QComboBox, QLabel, QCheckBox
+    from PySide.QtGui import QWidget, QApplication, QGridLayout, QPushButton, QPixmap, QComboBox, QLabel, QCheckBox, \
+        QSizePolicy
 except ModuleNotFoundError:
     from PyQt5 import QtGui, QtCore
-    from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QPushButton, QComboBox, QLabel, QCheckBox
+    from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QPushButton, QComboBox, QLabel, QCheckBox, \
+        QSizePolicy
     from PyQt5.QtGui import QPixmap
 
 import facade_selection.my_qt_label
@@ -31,7 +33,6 @@ class FacadeGui(QWidget):
         self.grid_placed: int = 0
 
         main_layout = QGridLayout()
-        self.setFixedSize(1200, 800)
 
         self.mode_combo_box = QComboBox()
         self.mode_combo_box.addItems(['Window', 'Balcony'])
@@ -55,6 +56,8 @@ class FacadeGui(QWidget):
         self.image_label = facade_selection.my_qt_label.MyQtLabel(self)
         self.image_label.setPixmap(QPixmap.fromImage(q_image))
         self.image_label.setScaledContents(True)
+        #TODO fix image size
+        self.image_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
 
         main_layout.addWidget(self.status_label, 0, 0, 1, -1)
         main_layout.addWidget(self.grid_box, 1, 0)
@@ -65,6 +68,7 @@ class FacadeGui(QWidget):
         main_layout.addWidget(self.image_label, 3, 0, 1, -1)
 
         self.setLayout(main_layout)
+        self.setFixedSize(self.width(), self.height())
         self.show()
 
     def add_rectangle(self, point1, point2):
